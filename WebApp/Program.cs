@@ -29,153 +29,56 @@ app.Run(async (HttpContext context) =>
         }
         else if (context.Request.Method == "POST")
         {
-            if (context.Request.Path.StartsWithSegments("/employees"))
-            {
-                using var reader = new StreamReader(context.Request.Body);
-                var body = await reader.ReadToEndAsync();
-                var employee = JsonSerializer.Deserialize<Employee>(body);
+            using var reader = new StreamReader(context.Request.Body);
+            var body = await reader.ReadToEndAsync();
+            var employee = JsonSerializer.Deserialize<Employee>(body);
 
-                EmployeeRepository.AddEmployee(employee);
-            }
+            EmployeeRepository.AddEmployee(employee);
         }
         else if (context.Request.Method == "PUT")
         {
-            if (context.Request.Path.StartsWithSegments("/employees"))
+            using var reader = new StreamReader(context.Request.Body);
+            var body = await reader.ReadToEndAsync();
+            var employee = JsonSerializer.Deserialize<Employee>(body);
+
+            var reuslt = EmployeeRepository.UpdateEmployee(employee);
+
+            if (reuslt)
             {
-                using var reader = new StreamReader(context.Request.Body);
-                var body = await reader.ReadToEndAsync();
-                var employee = JsonSerializer.Deserialize<Employee>(body);
-
-                var reuslt = EmployeeRepository.UpdateEmployee(employee);
-
-                if (reuslt)
-                {
-                    await context.Response.WriteAsync("Employee update successully.");
-                }
-                else
-                {
-                    await context.Response.WriteAsync("Employee not found.");
-                }
+                await context.Response.WriteAsync("Employee update successully.");
+            }
+            else
+            {
+                await context.Response.WriteAsync("Employee not found.");
             }
         }
         else if (context.Request.Method == "DELETE")
         {
-            if (context.Request.Path.StartsWithSegments("/employees"))
+            if (context.Request.Query.ContainsKey("id"))
             {
-                if (context.Request.Query.ContainsKey("id"))
+                var id = context.Request.Query["id"];
+                if (int.TryParse(id, out int employeeId))
                 {
-                    var id = context.Request.Query["id"];
-                    if (int.TryParse(id, out int employeeId))
+                    if (context.Request.Headers["Authorization"] == "frank")
                     {
-                        if (context.Request.Headers["Authorization"] == "frank")
+                        var result = EmployeeRepository.DeleteEmployee(employeeId);
+                        if (result)
                         {
-                            var result = EmployeeRepository.DeleteEmployee(employeeId);
-                            if (result)
-                            {
-                                await context.Response.WriteAsync("Employee is delete successully.");
-                            }
-                            else
-                            {
-                                await context.Response.WriteAsync("Employee not found.");
-                            }
+                            await context.Response.WriteAsync("Employee is delete successully.");
                         }
                         else
                         {
-                            await context.Response.WriteAsync("You are not authorized to delete.");
+                            await context.Response.WriteAsync("Employee not found.");
                         }
-
+                    }
+                    else
+                    {
+                        await context.Response.WriteAsync("You are not authorized to delete.");
                     }
                 }
             }
         }
     }
-
-
-    //if (context.Request.Method == "GET")
-    //{
-    //    if (context.Request.Path.StartsWithSegments("/"))
-    //    {
-    //        await context.Response.WriteAsync($"The method is: {context.Request.Method}\r\n");
-    //        await context.Response.WriteAsync($"The Url is: {context.Request.Path}\r\n");
-
-    //        await context.Response.WriteAsync($"\r\nHeaders:\r\n");
-    //        foreach (var key in context.Request.Headers.Keys)
-    //        {
-    //            await context.Response.WriteAsync($"{key}: {context.Request.Headers[key]}\r\n");
-    //        }
-    //    }
-    //    else if (context.Request.Path.StartsWithSegments("/employees"))
-    //    {
-    //        var employees = EmployeeRepository.GetEmployees();
-    //        foreach (var employee in employees)
-    //        {
-    //            await context.Response.WriteAsync($"{employee.Name} {employee.Position} {employee.Salary}\n");
-    //        }
-    //    }
-    //}
-    //else if (context.Request.Method == "POST")
-    //{
-    //    if (context.Request.Path.StartsWithSegments("/employees"))
-    //    {
-    //        using var reader = new StreamReader(context.Request.Body);
-    //        var body = await reader.ReadToEndAsync();
-    //        var employee = JsonSerializer.Deserialize<Employee>(body);
-
-    //        EmployeeRepository.AddEmployee(employee);
-    //    }
-    //}
-    //else if (context.Request.Method == "PUT")
-    //{
-    //    if (context.Request.Path.StartsWithSegments("/employees"))
-    //    {
-    //        using var reader = new StreamReader(context.Request.Body);
-    //        var body = await reader.ReadToEndAsync();
-    //        var employee = JsonSerializer.Deserialize<Employee>(body);
-
-    //        var reuslt = EmployeeRepository.UpdateEmployee(employee);
-
-    //        if (reuslt)
-    //        {
-    //            await context.Response.WriteAsync("Employee update successully.");
-    //        }
-    //        else
-    //        {
-    //            await context.Response.WriteAsync("Employee not found.");
-    //        }
-    //    }
-    //}
-    //else if (context.Request.Method == "DELETE")
-    //{
-    //    if (context.Request.Path.StartsWithSegments("/employees"))
-    //    {
-    //        if (context.Request.Query.ContainsKey("id"))
-    //        {
-    //            var id = context.Request.Query["id"];
-    //            if (int.TryParse(id, out int employeeId))
-    //            {
-    //                if (context.Request.Headers["Authorization"] == "frank")
-    //                {
-    //                    var result = EmployeeRepository.DeleteEmployee(employeeId);
-    //                    if (result)
-    //                    {
-    //                        await context.Response.WriteAsync("Employee is delete successully.");
-    //                    }
-    //                    else
-    //                    {
-    //                        await context.Response.WriteAsync("Employee not found.");
-    //                    }
-    //                }
-    //                else
-    //                {
-    //                    await context.Response.WriteAsync("You are not authorized to delete.");
-    //                }
-
-    //            }
-    //        }
-    //    }
-    //}
-
-
 });
 
 app.Run();
